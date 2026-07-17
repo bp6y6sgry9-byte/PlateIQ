@@ -1,0 +1,1425 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MacroLens</title>
+    <meta
+      name="description"
+      content="A dark calorie, macro, restaurant photo, goal, and fasting tracker."
+    />
+    <style>
+      :root {
+        --background: #07090d;
+        --surface: #10141b;
+        --surface-2: #151b24;
+        --foreground: #f6f7f2;
+        --muted: #9ba6b5;
+        --line: rgba(255, 255, 255, 0.1);
+        --green: #75f2a8;
+        --amber: #f5c86b;
+        --red: #ff735f;
+        --cyan: #79d8ff;
+        --ink: #07090d;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 16% 0%, rgba(117, 242, 168, 0.12), transparent 28rem),
+          radial-gradient(circle at 86% 12%, rgba(121, 216, 255, 0.1), transparent 24rem),
+          linear-gradient(180deg, #0a0d13 0%, var(--background) 44%, #050609 100%);
+        color: var(--foreground);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--foreground);
+        outline: none;
+      }
+
+      input,
+      select {
+        height: 42px;
+        padding: 0 11px;
+      }
+
+      textarea {
+        min-height: 80px;
+        padding: 11px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: rgba(117, 242, 168, 0.75);
+        box-shadow: 0 0 0 3px rgba(117, 242, 168, 0.14);
+      }
+
+      select option {
+        background: #10141b;
+        color: var(--foreground);
+      }
+
+      button {
+        min-height: 42px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
+      .app {
+        width: min(1440px, 100%);
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 24px;
+        min-height: 310px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background:
+          linear-gradient(135deg, rgba(16, 20, 27, 0.92), rgba(12, 15, 20, 0.8)),
+          linear-gradient(90deg, rgba(117, 242, 168, 0.14), transparent 44%),
+          var(--surface);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+      }
+
+      .hero-copy {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 32px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--green);
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        line-height: 1;
+      }
+
+      h1 {
+        max-width: 820px;
+        font-size: clamp(2.75rem, 7vw, 6.75rem);
+      }
+
+      h2 {
+        font-size: 1.35rem;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .metric,
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(16, 20, 27, 0.78);
+      }
+
+      .metric {
+        min-height: 126px;
+        padding: 18px;
+      }
+
+      .metric span,
+      .metric small,
+      .muted,
+      label span,
+      .progress-label span,
+      .fine-print {
+        color: var(--muted);
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 10px;
+        font-size: clamp(1.6rem, 3vw, 2.5rem);
+        line-height: 1;
+      }
+
+      .green {
+        color: var(--green);
+      }
+
+      .amber {
+        color: var(--amber);
+      }
+
+      .red {
+        color: var(--red);
+      }
+
+      .plate-visual {
+        display: grid;
+        place-items: center;
+        border-left: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .plate {
+        position: relative;
+        width: 220px;
+        aspect-ratio: 1;
+        border: 16px solid rgba(255, 255, 255, 0.14);
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at center, rgba(255, 255, 255, 0.13), transparent 56%),
+          #161b22;
+      }
+
+      .food-shape {
+        position: absolute;
+        border-radius: 999px;
+      }
+
+      .protein {
+        width: 74px;
+        height: 50px;
+        top: 52px;
+        left: 38px;
+        background: linear-gradient(135deg, #f3c189, #d66e4c);
+      }
+
+      .carb {
+        width: 76px;
+        height: 76px;
+        right: 34px;
+        bottom: 34px;
+        background: linear-gradient(135deg, #fff2b0, #d8aa4a);
+      }
+
+      .greens {
+        width: 82px;
+        height: 58px;
+        top: 42px;
+        right: 34px;
+        background: linear-gradient(135deg, #75f2a8, #168b53);
+      }
+
+      .sauce {
+        width: 44px;
+        height: 44px;
+        left: 64px;
+        bottom: 38px;
+        background: linear-gradient(135deg, #ff735f, #8c302a);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .main,
+      .side {
+        display: grid;
+        gap: 18px;
+        align-content: start;
+      }
+
+      .panel {
+        padding: 22px;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+      }
+
+      .heading {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 22px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+      }
+
+      label span {
+        font-size: 0.75rem;
+        font-weight: 750;
+        text-transform: uppercase;
+      }
+
+      .progress-stack,
+      .photo-controls,
+      .readout {
+        display: grid;
+        gap: 14px;
+      }
+
+      .progress-row {
+        display: grid;
+        gap: 8px;
+      }
+
+      .progress-label {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .track {
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.07);
+        overflow: hidden;
+      }
+
+      .track span {
+        display: block;
+        height: 100%;
+        width: 0%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--green), var(--cyan));
+      }
+
+      .photo-grid {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
+        gap: 18px;
+      }
+
+      .photo-drop {
+        position: relative;
+        display: grid;
+        min-height: 360px;
+        place-items: center;
+        overflow: hidden;
+        border: 1px solid rgba(117, 242, 168, 0.22);
+        border-radius: 8px;
+        background:
+          linear-gradient(135deg, rgba(117, 242, 168, 0.1), transparent),
+          rgba(255, 255, 255, 0.04);
+        text-align: center;
+      }
+
+      .photo-drop input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      .photo-preview {
+        width: 100%;
+        height: 100%;
+        min-height: 360px;
+        object-fit: cover;
+      }
+
+      .photo-empty {
+        display: grid;
+        gap: 8px;
+        max-width: 260px;
+        padding: 24px;
+      }
+
+      .photo-fields,
+      .food-form,
+      .goal-fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .food-form {
+        grid-template-columns: minmax(220px, 1.6fr) repeat(4, minmax(84px, 0.5fr)) 88px;
+      }
+
+      .food-name {
+        grid-column: auto;
+      }
+
+      .toggle-row {
+        display: flex;
+        grid-column: 1 / -1;
+        gap: 10px;
+        align-items: center;
+        min-height: 42px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .toggle-row input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--green);
+      }
+
+      .primary {
+        background: var(--green);
+        color: var(--ink);
+      }
+
+      .ghost,
+      .quick-adds button {
+        border-color: var(--line);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--foreground);
+      }
+
+      .wide {
+        width: 100%;
+      }
+
+      .quick-adds {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 18px 0;
+      }
+
+      .quick-adds button {
+        padding: 0 13px;
+        color: var(--muted);
+      }
+
+      .accuracy-card,
+      .fasting-card {
+        display: grid;
+        gap: 10px;
+        border: 1px solid rgba(117, 242, 168, 0.16);
+        border-radius: 8px;
+        padding: 14px;
+        background: rgba(117, 242, 168, 0.06);
+      }
+
+      .confidence-line,
+      .estimate-breakdown,
+      .readout div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .estimate-breakdown {
+        flex-wrap: wrap;
+      }
+
+      .estimate-breakdown span {
+        color: var(--cyan);
+        font-weight: 800;
+      }
+
+      .range-chip {
+        flex: 0 0 auto;
+        border: 1px solid rgba(121, 216, 255, 0.22);
+        border-radius: 999px;
+        padding: 8px 10px;
+        color: var(--cyan);
+        background: rgba(121, 216, 255, 0.08);
+        font-size: 0.74rem;
+        font-weight: 850;
+      }
+
+      .food-table {
+        display: grid;
+        gap: 8px;
+        margin-top: 18px;
+      }
+
+      .food-row {
+        display: grid;
+        grid-template-columns: minmax(180px, 1.5fr) repeat(4, minmax(64px, 0.42fr)) 44px;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .table-head {
+        padding: 0 8px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .food-title-cell {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        min-width: 0;
+      }
+
+      .food-title-cell > div {
+        display: grid;
+        gap: 5px;
+        width: 100%;
+        min-width: 0;
+      }
+
+      .food-title-cell small {
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 0.72rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .thumb {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        object-fit: cover;
+      }
+
+      .remove {
+        background: rgba(255, 115, 95, 0.1);
+        color: var(--red);
+      }
+
+      .empty {
+        display: grid;
+        gap: 6px;
+        min-height: 118px;
+        place-items: center;
+        border: 1px dashed rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .fasting-card {
+        border-color: rgba(121, 216, 255, 0.18);
+        background: rgba(121, 216, 255, 0.06);
+      }
+
+      .fasting-card strong {
+        color: var(--cyan);
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .switch {
+        position: relative;
+        width: 54px;
+        height: 30px;
+      }
+
+      .switch input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        opacity: 0;
+      }
+
+      .switch span {
+        position: absolute;
+        inset: 0;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .switch span::after {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--muted);
+        content: "";
+      }
+
+      .switch input:checked + span {
+        background: rgba(117, 242, 168, 0.18);
+      }
+
+      .switch input:checked + span::after {
+        transform: translateX(24px);
+        background: var(--green);
+      }
+
+      .fine-print {
+        margin: 14px 0 0;
+        font-size: 0.86rem;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 1120px) {
+        .hero,
+        .grid,
+        .photo-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .plate-visual {
+          min-height: 230px;
+          border-top: 1px solid var(--line);
+          border-left: 0;
+        }
+
+        .food-form {
+          grid-template-columns: repeat(4, 1fr);
+        }
+
+        .food-name {
+          grid-column: 1 / -1;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .app {
+          padding: 12px;
+        }
+
+        .hero-copy,
+        .panel {
+          padding: 18px;
+        }
+
+        .stats,
+        .goal-fields,
+        .photo-fields {
+          grid-template-columns: 1fr;
+        }
+
+        .heading {
+          flex-direction: column;
+        }
+
+        .food-form {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .food-table {
+          overflow-x: auto;
+          padding-bottom: 4px;
+        }
+
+        .food-row {
+          min-width: 540px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <div class="hero-copy">
+          <div>
+            <p class="eyebrow">MacroLens</p>
+            <h1>Today has a number. Hit it clean.</h1>
+          </div>
+          <div class="stats">
+            <section class="metric">
+              <span>Calories left</span>
+              <strong id="caloriesLeft">2500</strong>
+              <small id="caloriesDetail">0 eaten of 2500</small>
+            </section>
+            <section class="metric">
+              <span>Protein left</span>
+              <strong id="proteinLeft">172g</strong>
+              <small id="proteinDetail">0g logged of 172g</small>
+            </section>
+            <section class="metric">
+              <span>Goal pace</span>
+              <strong id="paceValue">2.3 lb/wk</strong>
+              <small id="paceDetail">10 lb left over 30 days</small>
+            </section>
+          </div>
+        </div>
+        <div class="plate-visual" aria-hidden="true">
+          <div class="plate">
+            <span class="food-shape protein"></span>
+            <span class="food-shape carb"></span>
+            <span class="food-shape greens"></span>
+            <span class="food-shape sauce"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="main">
+          <section class="panel">
+            <div class="heading">
+              <div>
+                <p class="eyebrow">Daily log</p>
+                <h2 id="dateTitle">Today</h2>
+              </div>
+              <label>
+                <span>Date</span>
+                <input id="selectedDate" type="date" />
+              </label>
+            </div>
+            <div class="progress-stack">
+              <div class="progress-row">
+                <div class="progress-label"><span>Calories</span><strong id="caloriesProgressText"></strong></div>
+                <div class="track"><span id="caloriesBar"></span></div>
+              </div>
+              <div class="progress-row">
+                <div class="progress-label"><span>Protein</span><strong id="proteinProgressText"></strong></div>
+                <div class="track"><span id="proteinBar"></span></div>
+              </div>
+              <div class="progress-row">
+                <div class="progress-label"><span>Carbs</span><strong id="carbsProgressText"></strong></div>
+                <div class="track"><span id="carbsBar"></span></div>
+              </div>
+              <div class="progress-row">
+                <div class="progress-label"><span>Fat</span><strong id="fatProgressText"></strong></div>
+                <div class="track"><span id="fatBar"></span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="heading">
+              <div>
+                <p class="eyebrow">Restaurant photo log</p>
+                <h2>Snap meal, tighten estimate</h2>
+              </div>
+              <span id="photoRange" class="range-chip">Photo needed</span>
+            </div>
+            <div class="photo-grid">
+              <div class="photo-drop">
+                <input id="photoInput" type="file" accept="image/*" capture="environment" />
+                <span id="photoEmpty" class="photo-empty">
+                  <strong>Take food photo</strong>
+                  <small>Keep the full plate and a fork, hand, or cup in frame.</small>
+                </span>
+                <img id="photoPreview" class="photo-preview" alt="Meal preview" hidden />
+              </div>
+
+              <div class="photo-controls">
+                <div class="photo-fields">
+                  <label>
+                    <span>Restaurant</span>
+                    <input id="restaurant" placeholder="Chipotle, diner, sushi spot..." />
+                  </label>
+                  <label>
+                    <span>Meal type</span>
+                    <select id="mealPreset"></select>
+                  </label>
+                  <label>
+                    <span>Portion</span>
+                    <select id="portionSize"></select>
+                  </label>
+                  <label>
+                    <span>Oil / butter</span>
+                    <select id="cookingFat"></select>
+                  </label>
+                  <label>
+                    <span>Sauce / dressing</span>
+                    <select id="sauceLevel"></select>
+                  </label>
+                  <label class="toggle-row">
+                    <input id="referenceInFrame" type="checkbox" />
+                    <span>Fork, hand, can, or full plate visible for scale</span>
+                  </label>
+                </div>
+
+                <label>
+                  <span>Accuracy notes</span>
+                  <textarea id="photoNotes" placeholder="Ate half the fries, sauce on side, shared appetizer..."></textarea>
+                </label>
+
+                <div class="accuracy-card">
+                  <div class="confidence-line">
+                    <span class="muted">Confidence</span>
+                    <strong id="confidenceValue">15%</strong>
+                  </div>
+                  <div class="track"><span id="confidenceBar"></span></div>
+                  <div class="estimate-breakdown">
+                    <strong id="estimateCalories">700 cal</strong>
+                    <span id="estimateProtein">35g P</span>
+                    <span id="estimateCarbs">65g C</span>
+                    <span id="estimateFat">30g F</span>
+                  </div>
+                  <ul id="accuracyNotes" class="muted"></ul>
+                </div>
+
+                <button id="addPhotoEstimate" class="primary wide" disabled>Add photo estimate</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="heading">
+              <div>
+                <p class="eyebrow">Manual entry</p>
+                <h2>Add food</h2>
+              </div>
+              <button id="clearDay" class="ghost">Clear day</button>
+            </div>
+
+            <div class="food-form">
+              <label class="food-name">
+                <span>Food</span>
+                <input id="foodName" placeholder="Chicken bowl, protein bar, sauce..." />
+              </label>
+              <label><span>Calories</span><input id="foodCalories" type="number" min="0" value="0" /></label>
+              <label><span>Protein</span><input id="foodProtein" type="number" min="0" value="0" /></label>
+              <label><span>Carbs</span><input id="foodCarbs" type="number" min="0" value="0" /></label>
+              <label><span>Fat</span><input id="foodFat" type="number" min="0" value="0" /></label>
+              <button id="addFood" class="primary">Add</button>
+            </div>
+
+            <div class="quick-adds" id="quickAdds"></div>
+            <div class="food-table">
+              <div class="food-row table-head">
+                <span>Food</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span></span>
+              </div>
+              <div id="foodRows"></div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="side">
+          <section class="panel">
+            <div class="heading">
+              <div>
+                <p class="eyebrow">Intermittent fasting</p>
+                <h2 id="fastingTitle">16-hour timer</h2>
+              </div>
+              <label class="switch">
+                <input id="fastingEnabled" type="checkbox" checked />
+                <span></span>
+              </label>
+            </div>
+            <div class="fasting-card">
+              <span class="muted" id="fastLabel">Time remaining</span>
+              <strong id="fastTime">--</strong>
+              <small id="windowStatus" class="muted">Eating window 12:00-20:00</small>
+              <div class="track"><span id="fastBar"></span></div>
+            </div>
+            <div class="goal-fields" style="margin-top: 16px">
+              <label><span>Fast hours</span><input id="fastHours" type="number" min="1" value="16" /></label>
+              <label><span>Last meal</span><input id="lastMealAt" type="datetime-local" /></label>
+              <label><span>Window start</span><input id="windowStart" type="time" value="12:00" /></label>
+              <label><span>Window end</span><input id="windowEnd" type="time" value="20:00" /></label>
+            </div>
+            <button id="logLastMeal" class="primary wide" style="margin-top: 12px">Log last meal now</button>
+            <p class="fine-print">Default plan: 16-hour fast, eating from 12:00 to 20:00.</p>
+          </section>
+
+          <section class="panel">
+            <div class="heading">
+              <div>
+                <p class="eyebrow">Goal setup</p>
+                <h2>Cut target</h2>
+              </div>
+              <span id="pacePill" class="range-chip">Aggressive pace</span>
+            </div>
+            <div class="goal-fields">
+              <label><span>Daily calories</span><input id="calorieTarget" type="number" min="0" value="2500" /></label>
+              <label><span>Start weight</span><input id="startWeight" type="number" min="0" step="0.1" value="215" /></label>
+              <label><span>Current weight</span><input id="currentWeight" type="number" min="0" step="0.1" value="215" /></label>
+              <label><span>Goal weight</span><input id="targetWeight" type="number" min="0" step="0.1" value="205" /></label>
+              <label><span>Goal date</span><input id="goalDate" type="date" /></label>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="heading">
+              <div>
+                <p class="eyebrow">Protein rule</p>
+                <h2 id="proteinTargetTitle">172g target</h2>
+              </div>
+            </div>
+            <div class="goal-fields">
+              <label><span>Grams per pound</span><input id="proteinPerPound" type="number" min="0" step="0.1" value="0.8" /></label>
+              <label>
+                <span>Basis</span>
+                <select id="proteinBasis">
+                  <option value="bodyWeight">Body weight</option>
+                  <option value="leanMass">Lean mass</option>
+                  <option value="bodyFat">Body fat</option>
+                </select>
+              </label>
+              <label><span>Body fat %</span><input id="bodyFatPercent" type="number" min="0" step="0.5" value="22" /></label>
+            </div>
+          </section>
+
+          <section class="panel">
+            <p class="eyebrow">Readout</p>
+            <h2>Today's check</h2>
+            <div class="readout">
+              <div><span class="muted">Calories from macros</span><strong id="macroCalories">0</strong></div>
+              <div><span class="muted">Logged items</span><strong id="loggedItems">0</strong></div>
+              <div><span class="muted">Protein completion</span><strong id="proteinCompletion">0%</strong></div>
+            </div>
+            <p class="fine-print">Photo estimates are for planning. Oil, sauces, and portion scale matter most.</p>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      const STORAGE_KEY = "macrolens-github-pages-v1";
+      const MS_PER_DAY = 86400000;
+      const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+      const round = (value, digits = 0) => Math.round(value * 10 ** digits) / 10 ** digits;
+      const todayIso = () => new Date().toISOString().slice(0, 10);
+      const isoDaysFromNow = (days) => {
+        const date = new Date();
+        date.setDate(date.getDate() + days);
+        return date.toISOString().slice(0, 10);
+      };
+
+      const defaults = {
+        goals: {
+          calorieTarget: 2500,
+          startWeight: 215,
+          currentWeight: 215,
+          targetWeight: 205,
+          goalDate: isoDaysFromNow(30),
+          proteinPerPound: 0.8,
+          proteinBasis: "bodyWeight",
+          bodyFatPercent: 22
+        },
+        fasting: {
+          enabled: true,
+          fastHours: 16,
+          windowStart: "12:00",
+          windowEnd: "20:00",
+          lastMealAt: ""
+        },
+        selectedDate: todayIso(),
+        foods: [],
+        photoDraft: {
+          photoDataUrl: "",
+          restaurant: "",
+          mealPreset: "burritoBowl",
+          portionSize: "standard",
+          cookingFat: "unknown",
+          sauceLevel: "standard",
+          referenceInFrame: false,
+          notes: ""
+        }
+      };
+
+      const quickAdds = [
+        { name: "Chicken rice bowl", calories: 620, protein: 52, carbs: 68, fat: 14 },
+        { name: "Greek yogurt + berries", calories: 260, protein: 28, carbs: 30, fat: 3 },
+        { name: "Protein shake", calories: 190, protein: 32, carbs: 6, fat: 3 },
+        { name: "Dining hall plate", calories: 760, protein: 48, carbs: 78, fat: 28 }
+      ];
+
+      const mealPresets = {
+        burritoBowl: { label: "Restaurant bowl", calories: 760, protein: 46, carbs: 82, fat: 27 },
+        burgerFries: { label: "Burger + fries", calories: 980, protein: 42, carbs: 96, fat: 46 },
+        pasta: { label: "Pasta entree", calories: 890, protein: 34, carbs: 112, fat: 32 },
+        sushi: { label: "Sushi order", calories: 720, protein: 38, carbs: 92, fat: 18 },
+        salad: { label: "Loaded salad", calories: 640, protein: 40, carbs: 34, fat: 38 },
+        steakPotato: { label: "Steak + potato", calories: 820, protein: 62, carbs: 58, fat: 36 },
+        pizza: { label: "Pizza meal", calories: 860, protein: 38, carbs: 92, fat: 34 },
+        ramen: { label: "Ramen bowl", calories: 930, protein: 42, carbs: 108, fat: 36 },
+        custom: { label: "Custom restaurant plate", calories: 700, protein: 35, carbs: 65, fat: 30 }
+      };
+
+      const portions = {
+        small: { label: "Light / left some", multiplier: 0.78 },
+        standard: { label: "Normal restaurant serving", multiplier: 1 },
+        large: { label: "Large / packed plate", multiplier: 1.22 },
+        huge: { label: "Huge / split-worthy", multiplier: 1.45 }
+      };
+
+      const cookingFats = {
+        none: { label: "Grilled / no added oil", calories: 0, fat: 0 },
+        light: { label: "Light oil or butter", calories: 60, fat: 7 },
+        unknown: { label: "Unknown restaurant oil", calories: 120, fat: 13 },
+        heavy: { label: "Fried / heavy oil", calories: 240, fat: 27 }
+      };
+
+      const sauces = {
+        none: { label: "No sauce/dressing", calories: 0, carbs: 0, fat: 0 },
+        light: { label: "Light sauce", calories: 50, carbs: 5, fat: 3 },
+        standard: { label: "Normal sauce/dressing", calories: 120, carbs: 10, fat: 8 },
+        heavy: { label: "Heavy sauce/dressing", calories: 220, carbs: 18, fat: 15 }
+      };
+
+      let state = loadState();
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          return {
+            ...defaults,
+            ...saved,
+            goals: { ...defaults.goals, ...(saved.goals || {}) },
+            fasting: { ...defaults.fasting, ...(saved.fasting || {}) },
+            photoDraft: { ...defaults.photoDraft, ...(saved.photoDraft || {}) },
+            foods: Array.isArray(saved.foods) ? saved.foods : []
+          };
+        } catch {
+          return structuredClone(defaults);
+        }
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch {
+          const lightFoods = state.foods.map((food) => ({ ...food, photoDataUrl: "" }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, foods: lightFoods }));
+        }
+      }
+
+      function optionList(select, items) {
+        select.innerHTML = Object.entries(items)
+          .map(([value, item]) => `<option value="${value}">${item.label}</option>`)
+          .join("");
+      }
+
+      function numberInput(id) {
+        return Number(document.getElementById(id).value || 0);
+      }
+
+      function setText(id, value) {
+        document.getElementById(id).textContent = value;
+      }
+
+      function setWidth(id, value) {
+        document.getElementById(id).style.width = `${clamp(value, 0, 100)}%`;
+      }
+
+      function progressPercent(value, target) {
+        return target <= 0 ? 0 : clamp((value / target) * 100, 0, 100);
+      }
+
+      function proteinTarget() {
+        const goals = state.goals;
+        const basisWeight =
+          goals.proteinBasis === "bodyWeight"
+            ? goals.currentWeight
+            : goals.proteinBasis === "leanMass"
+              ? goals.currentWeight * (1 - goals.bodyFatPercent / 100)
+              : goals.currentWeight * (goals.bodyFatPercent / 100);
+        return Math.max(0, basisWeight * goals.proteinPerPound);
+      }
+
+      function macroCalories(food) {
+        return food.protein * 4 + food.carbs * 4 + food.fat * 9;
+      }
+
+      function totals() {
+        return state.foods.reduce(
+          (sum, food) => ({
+            calories: sum.calories + Number(food.calories || 0),
+            protein: sum.protein + Number(food.protein || 0),
+            carbs: sum.carbs + Number(food.carbs || 0),
+            fat: sum.fat + Number(food.fat || 0)
+          }),
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+      }
+
+      function estimatePhotoMeal() {
+        const draft = state.photoDraft;
+        const preset = mealPresets[draft.mealPreset];
+        const portion = portions[draft.portionSize];
+        const fatAdd = cookingFats[draft.cookingFat];
+        const sauceAdd = sauces[draft.sauceLevel];
+        const calories = preset.calories * portion.multiplier + fatAdd.calories + sauceAdd.calories;
+        const protein = preset.protein * portion.multiplier;
+        const carbs = preset.carbs * portion.multiplier + sauceAdd.carbs;
+        const fat = preset.fat * portion.multiplier + fatAdd.fat + sauceAdd.fat;
+        let confidence = draft.photoDataUrl ? 42 : 15;
+        const notes = ["Restaurant oil/sauce is counted so the estimate does not default low."];
+        if (draft.mealPreset !== "custom") confidence += 15;
+        if (draft.referenceInFrame) {
+          confidence += 15;
+          notes.push("Reference object or plate size visible improves portion accuracy.");
+        } else {
+          notes.push("Add a fork, hand, can, or full plate in frame for better portion scale.");
+        }
+        if (draft.cookingFat !== "unknown") {
+          confidence += 14;
+        } else {
+          notes.push("Unknown cooking fat assumes +120 calories.");
+        }
+        if (draft.restaurant.trim()) confidence += 7;
+        if (draft.notes.trim()) confidence += 5;
+        confidence = round(clamp(confidence, 20, 93));
+        const spread = confidence >= 82 ? 0.12 : confidence >= 64 ? 0.18 : 0.28;
+        return {
+          name: `${draft.restaurant.trim() ? `${draft.restaurant.trim()} - ` : ""}${preset.label}`,
+          calories: round(calories),
+          protein: round(protein),
+          carbs: round(carbs),
+          fat: round(fat),
+          confidence,
+          range: { low: round(calories * (1 - spread)), high: round(calories * (1 + spread)) },
+          notes
+        };
+      }
+
+      function compressImage(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const image = new Image();
+            image.onload = () => {
+              const maxSide = 900;
+              const scale = Math.min(1, maxSide / image.width, maxSide / image.height);
+              const canvas = document.createElement("canvas");
+              canvas.width = Math.max(1, Math.round(image.width * scale));
+              canvas.height = Math.max(1, Math.round(image.height * scale));
+              const context = canvas.getContext("2d");
+              if (!context) return resolve(reader.result);
+              context.drawImage(image, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL("image/jpeg", 0.78));
+            };
+            image.onerror = reject;
+            image.src = reader.result;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function formatDuration(ms) {
+        const safe = Math.max(0, ms);
+        const hours = Math.floor(safe / 3600000);
+        const minutes = Math.floor((safe % 3600000) / 60000);
+        return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+      }
+
+      function toDateTimeLocal(ms) {
+        const date = new Date(ms);
+        const pad = (value) => String(value).padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      }
+
+      function minutesFromTime(value) {
+        const [hours, minutes] = value.split(":").map(Number);
+        return hours * 60 + minutes;
+      }
+
+      function isWithinWindow(nowMinutes, start, end) {
+        const startMinutes = minutesFromTime(start);
+        const endMinutes = minutesFromTime(end);
+        return startMinutes <= endMinutes
+          ? nowMinutes >= startMinutes && nowMinutes < endMinutes
+          : nowMinutes >= startMinutes || nowMinutes < endMinutes;
+      }
+
+      function addFood(food) {
+        if (!food.name.trim() && food.calories <= 0 && food.protein <= 0) return;
+        state.foods.unshift({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          source: "manual",
+          ...food,
+          name: food.name.trim() || "Manual food"
+        });
+        saveState();
+        render();
+      }
+
+      function hydrateControls() {
+        optionList(document.getElementById("mealPreset"), mealPresets);
+        optionList(document.getElementById("portionSize"), portions);
+        optionList(document.getElementById("cookingFat"), cookingFats);
+        optionList(document.getElementById("sauceLevel"), sauces);
+        document.getElementById("goalDate").value = state.goals.goalDate;
+        document.getElementById("selectedDate").value = state.selectedDate;
+        document.getElementById("quickAdds").innerHTML = quickAdds
+          .map((food, index) => `<button data-quick="${index}">+ ${food.name}</button>`)
+          .join("");
+      }
+
+      function render() {
+        const t = totals();
+        const pTarget = proteinTarget();
+        const caloriesLeft = state.goals.calorieTarget - t.calories;
+        const proteinLeft = pTarget - t.protein;
+        const poundsLeft = Math.max(0, state.goals.currentWeight - state.goals.targetWeight);
+        const daysLeft = Math.max(
+          0,
+          Math.ceil((new Date(`${state.goals.goalDate}T00:00:00`).getTime() - new Date(`${todayIso()}T00:00:00`).getTime()) / MS_PER_DAY)
+        );
+        const weeklyPace = daysLeft > 0 ? (poundsLeft / daysLeft) * 7 : 0;
+        const carbsTarget = Math.max(180, (state.goals.calorieTarget * 0.34) / 4);
+        const fatTarget = Math.max(55, (state.goals.calorieTarget * 0.26) / 9);
+        const photo = estimatePhotoMeal();
+
+        setText("dateTitle", state.selectedDate);
+        setText("caloriesLeft", round(caloriesLeft));
+        setText("caloriesDetail", `${round(t.calories)} eaten of ${round(state.goals.calorieTarget)}`);
+        setText("proteinLeft", `${round(proteinLeft)}g`);
+        setText("proteinDetail", `${round(t.protein)}g logged of ${round(pTarget)}g`);
+        setText("paceValue", `${round(weeklyPace, 1)} lb/wk`);
+        setText("paceDetail", `${round(poundsLeft, 1)} lb left over ${daysLeft} days`);
+        setText("caloriesProgressText", `${round(t.calories)} / ${round(state.goals.calorieTarget)}`);
+        setText("proteinProgressText", `${round(t.protein)} / ${round(pTarget)}`);
+        setText("carbsProgressText", `${round(t.carbs)} / ${round(carbsTarget)}`);
+        setText("fatProgressText", `${round(t.fat)} / ${round(fatTarget)}`);
+        setWidth("caloriesBar", progressPercent(t.calories, state.goals.calorieTarget));
+        setWidth("proteinBar", progressPercent(t.protein, pTarget));
+        setWidth("carbsBar", progressPercent(t.carbs, carbsTarget));
+        setWidth("fatBar", progressPercent(t.fat, fatTarget));
+
+        setText("photoRange", state.photoDraft.photoDataUrl ? `${photo.range.low}-${photo.range.high} cal` : "Photo needed");
+        setText("confidenceValue", `${photo.confidence}%`);
+        setWidth("confidenceBar", photo.confidence);
+        setText("estimateCalories", `${photo.calories} cal`);
+        setText("estimateProtein", `${photo.protein}g P`);
+        setText("estimateCarbs", `${photo.carbs}g C`);
+        setText("estimateFat", `${photo.fat}g F`);
+        document.getElementById("accuracyNotes").innerHTML = photo.notes.map((note) => `<li>${note}</li>`).join("");
+        document.getElementById("addPhotoEstimate").disabled = !state.photoDraft.photoDataUrl;
+        document.getElementById("photoPreview").hidden = !state.photoDraft.photoDataUrl;
+        document.getElementById("photoEmpty").hidden = Boolean(state.photoDraft.photoDataUrl);
+        if (state.photoDraft.photoDataUrl) document.getElementById("photoPreview").src = state.photoDraft.photoDataUrl;
+
+        document.getElementById("foodRows").innerHTML =
+          state.foods.length === 0
+            ? `<div class="empty"><strong>No foods logged yet.</strong><span class="muted">Start with one meal and let the totals work.</span></div>`
+            : state.foods
+                .map(
+                  (food) => `
+                    <div class="food-row" data-id="${food.id}">
+                      <div class="food-title-cell">
+                        ${food.photoDataUrl ? `<img class="thumb" src="${food.photoDataUrl}" alt="">` : ""}
+                        <div>
+                          <input data-field="name" value="${food.name.replaceAll('"', "&quot;")}" aria-label="Food name">
+                          ${
+                            food.source === "photo"
+                              ? `<small>Photo estimate · ${food.confidence}% confidence · ${food.range.low}-${food.range.high} cal</small>`
+                              : ""
+                          }
+                        </div>
+                      </div>
+                      <input data-field="calories" type="number" min="0" value="${food.calories}">
+                      <input data-field="protein" type="number" min="0" value="${food.protein}">
+                      <input data-field="carbs" type="number" min="0" value="${food.carbs}">
+                      <input data-field="fat" type="number" min="0" value="${food.fat}">
+                      <button class="remove" data-remove="${food.id}">x</button>
+                    </div>
+                  `
+                )
+                .join("");
+
+        setText("macroCalories", round(macroCalories(t)));
+        setText("loggedItems", state.foods.length);
+        setText("proteinCompletion", `${round(progressPercent(t.protein, pTarget))}%`);
+        setText("proteinTargetTitle", `${round(pTarget)}g target`);
+        document.getElementById("pacePill").textContent =
+          weeklyPace > 2 ? "Aggressive pace" : weeklyPace > 1.25 ? "Strong cut" : "Controlled pace";
+
+        renderFasting();
+        syncInputs();
+      }
+
+      function renderFasting() {
+        const fasting = state.fasting;
+        const now = Date.now();
+        const lastMeal = fasting.lastMealAt ? new Date(fasting.lastMealAt).getTime() : null;
+        const total = fasting.fastHours * 3600000;
+        const end = lastMeal ? lastMeal + total : null;
+        const elapsed = lastMeal ? Math.max(0, now - lastMeal) : 0;
+        const remaining = end ? Math.max(0, end - now) : total;
+        const complete = Boolean(end && now >= end);
+        const current = new Date(now);
+        const currentMinutes = current.getHours() * 60 + current.getMinutes();
+        const windowOpen = isWithinWindow(currentMinutes, fasting.windowStart, fasting.windowEnd);
+
+        setText("fastingTitle", fasting.enabled ? `${fasting.fastHours}-hour timer` : "Fasting off");
+        setText("fastLabel", complete ? "Fast complete" : "Time remaining");
+        setText("fastTime", fasting.enabled && lastMeal ? formatDuration(remaining) : "--");
+        setText("windowStatus", `Eating window ${fasting.windowStart}-${fasting.windowEnd} is ${windowOpen ? "open" : "closed"}`);
+        setWidth("fastBar", fasting.enabled && lastMeal ? progressPercent(elapsed, total) : 0);
+      }
+
+      function syncInputs() {
+        const goals = state.goals;
+        const fasting = state.fasting;
+        const photo = state.photoDraft;
+        for (const [key, value] of Object.entries(goals)) {
+          const input = document.getElementById(key);
+          if (input) input.value = value;
+        }
+        for (const [key, value] of Object.entries(fasting)) {
+          const input = document.getElementById(key);
+          if (input) {
+            if (input.type === "checkbox") input.checked = value;
+            else input.value = value;
+          }
+        }
+        document.getElementById("selectedDate").value = state.selectedDate;
+        document.getElementById("restaurant").value = photo.restaurant;
+        document.getElementById("mealPreset").value = photo.mealPreset;
+        document.getElementById("portionSize").value = photo.portionSize;
+        document.getElementById("cookingFat").value = photo.cookingFat;
+        document.getElementById("sauceLevel").value = photo.sauceLevel;
+        document.getElementById("referenceInFrame").checked = photo.referenceInFrame;
+        document.getElementById("photoNotes").value = photo.notes;
+      }
+
+      function wireEvents() {
+        ["calorieTarget", "startWeight", "currentWeight", "targetWeight", "goalDate", "proteinPerPound", "proteinBasis", "bodyFatPercent"].forEach(
+          (id) => {
+            document.getElementById(id).addEventListener("input", (event) => {
+              state.goals[id] = event.target.type === "number" ? Number(event.target.value) : event.target.value;
+              saveState();
+              render();
+            });
+          }
+        );
+
+        ["fastingEnabled", "fastHours", "lastMealAt", "windowStart", "windowEnd"].forEach((id) => {
+          document.getElementById(id).addEventListener("input", (event) => {
+            state.fasting[id === "fastingEnabled" ? "enabled" : id] =
+              event.target.type === "checkbox"
+                ? event.target.checked
+                : event.target.type === "number"
+                  ? Number(event.target.value)
+                  : event.target.value;
+            saveState();
+            render();
+          });
+        });
+
+        document.getElementById("selectedDate").addEventListener("input", (event) => {
+          state.selectedDate = event.target.value;
+          saveState();
+          render();
+        });
+
+        ["restaurant", "mealPreset", "portionSize", "cookingFat", "sauceLevel", "photoNotes"].forEach((id) => {
+          document.getElementById(id).addEventListener("input", (event) => {
+            state.photoDraft[id === "photoNotes" ? "notes" : id] = event.target.value;
+            saveState();
+            render();
+          });
+        });
+
+        document.getElementById("referenceInFrame").addEventListener("input", (event) => {
+          state.photoDraft.referenceInFrame = event.target.checked;
+          saveState();
+          render();
+        });
+
+        document.getElementById("photoInput").addEventListener("change", async (event) => {
+          const file = event.target.files && event.target.files[0];
+          if (!file) return;
+          state.photoDraft.photoDataUrl = await compressImage(file);
+          saveState();
+          render();
+        });
+
+        document.getElementById("addPhotoEstimate").addEventListener("click", () => {
+          const estimate = estimatePhotoMeal();
+          addFood({
+            name: estimate.name,
+            calories: estimate.calories,
+            protein: estimate.protein,
+            carbs: estimate.carbs,
+            fat: estimate.fat,
+            source: "photo",
+            confidence: estimate.confidence,
+            range: estimate.range,
+            photoDataUrl: state.photoDraft.photoDataUrl
+          });
+          state.photoDraft = structuredClone(defaults.photoDraft);
+          saveState();
+          render();
+        });
+
+        document.getElementById("addFood").addEventListener("click", () => {
+          addFood({
+            name: document.getElementById("foodName").value,
+            calories: numberInput("foodCalories"),
+            protein: numberInput("foodProtein"),
+            carbs: numberInput("foodCarbs"),
+            fat: numberInput("foodFat")
+          });
+          ["foodName", "foodCalories", "foodProtein", "foodCarbs", "foodFat"].forEach((id) => {
+            document.getElementById(id).value = id === "foodName" ? "" : 0;
+          });
+        });
+
+        document.getElementById("quickAdds").addEventListener("click", (event) => {
+          const index = event.target.dataset.quick;
+          if (index === undefined) return;
+          addFood(quickAdds[Number(index)]);
+        });
+
+        document.getElementById("foodRows").addEventListener("input", (event) => {
+          const row = event.target.closest(".food-row");
+          if (!row) return;
+          const food = state.foods.find((item) => item.id === row.dataset.id);
+          if (!food) return;
+          const field = event.target.dataset.field;
+          food[field] = field === "name" ? event.target.value : Number(event.target.value);
+          saveState();
+          render();
+        });
+
+        document.getElementById("foodRows").addEventListener("click", (event) => {
+          const id = event.target.dataset.remove;
+          if (!id) return;
+          state.foods = state.foods.filter((food) => food.id !== id);
+          saveState();
+          render();
+        });
+
+        document.getElementById("clearDay").addEventListener("click", () => {
+          state.foods = [];
+          saveState();
+          render();
+        });
+
+        document.getElementById("logLastMeal").addEventListener("click", () => {
+          state.fasting.lastMealAt = toDateTimeLocal(Date.now());
+          saveState();
+          render();
+        });
+      }
+
+      hydrateControls();
+      wireEvents();
+      render();
+      window.setInterval(renderFasting, 30000);
+    </script>
+  </body>
+</html>
